@@ -1,72 +1,40 @@
-"""config.py: secure configuration, RNF-02 and deployment (ADR-0003)."""
+"""config.py: zero-configuration startup locally and on Render."""
 
 import pytest
 
-from scrabble_tracker.config import (
-    ConfigurationError,
-    load_settings,
-    normalize_database_url,
-)
-
-PROD = {
-    "SCRABBLE_ENV": "production",
-    "DATABASE_URL": "postgresql://u:p@h/db",
-    "SCRABBLE_ADMIN_PASSWORD": "a-strong-password",
-}
+from scrabble_tracker.config import ConfigurationError, load_settings
 
 
-def test_development_defaults():
+def test_local_defaults_listen_on_loopback():
     s = load_settings({})
-    assert s.environment == "development"
-    assert s.database_url.startswith("sqlite:///")
-    assert s.host == "127.0.0.1" and s.port == 7860
-    assert s.uses_default_admin_password
+    assert (s.host, s.port, s.log_level) == ("127.0.0.1", 7860, "INFO")
 
 
-def test_testing_uses_memory_database():
-    assert load_settings({"SCRABBLE_ENV": "testing"}).database_url.endswith(":memory:")
+def test_render_port_binds_all_interfaces():
+    s = load_settings({"PORT": "10000"})
+    assert s.host == "0.0.0.0" and s.port == 10000  # noqa: S104
 
 
-def test_production_valid_binds_all_interfaces_and_uses_port():
-    s = load_settings({**PROD, "PORT": "10000"})
-    assert s.is_production and s.host == "0.0.0.0"  # noqa: S104
-    assert s.port == 10000
-    assert s.database_url.startswith("postgresql+psycopg://")
+def test_render_flag_alone_binds_all_interfaces():
+    assert load_settings({"RENDER": "true"}).host == "0.0.0.0"  # noqa: S104
 
 
-def test_production_requires_database_url():
-    env = {k: v for k, v in PROD.items() if k != "DATABASE_URL"}
-    with pytest.raises(ConfigurationError, match="DATABASE_URL"):
-        load_settings(env)
+def test_explicit_overrides():
+    s = load_settings(
+        {
+            "SCRABBLE_HOST": "10.0.0.5",
+            "SCRABBLE_PORT": "9000",
+            "SCRABBLE_LOG_LEVEL": "debug",
+        }
+    )
+    assert (s.host, s.port, s.log_level) == ("10.0.0.5", 9000, "DEBUG")
 
 
-@pytest.mark.parametrize("password", ["", "admin1234", "short"])
-def test_production_rejects_weak_admin_password(password):
-    with pytest.raises(ConfigurationError, match="ADMIN_PASSWORD"):
-        load_settings({**PROD, "SCRABBLE_ADMIN_PASSWORD": password})
+def test_platform_port_wins_over_local_port():
+    assert load_settings({"PORT": "10000", "SCRABBLE_PORT": "9000"}).port == 10000
 
 
-def test_invalid_environment_and_port():
+@pytest.mark.parametrize("port", ["abc", "0", "70000", "-1"])
+def test_invalid_port_rejected(port):
     with pytest.raises(ConfigurationError):
-        load_settings({"SCRABBLE_ENV": "staging"})
-    with pytest.raises(ConfigurationError):
-        load_settings({"PORT": "abc"})
-    with pytest.raises(ConfigurationError):
-        load_settings({"PORT": "70000"})
-
-
-def test_password_is_not_in_repr():
-    assert "a-strong-password" not in repr(load_settings(PROD))
-
-
-@pytest.mark.parametrize(
-    ("raw", "expected"),
-    [
-        ("postgres://u:p@h/d", "postgresql+psycopg://u:p@h/d"),
-        ("postgresql://u:p@h/d", "postgresql+psycopg://u:p@h/d"),
-        ("postgresql+psycopg://u:p@h/d", "postgresql+psycopg://u:p@h/d"),
-        ("sqlite:///x.db", "sqlite:///x.db"),
-    ],
-)
-def test_normalize_database_url(raw, expected):
-    assert normalize_database_url(raw) == expected
+        load_settings({"PORT": port})

@@ -1,6 +1,6 @@
 # ADR-0003: PostgreSQL for production, SQLite for development and tests
 
-- **Status:** Accepted (supersedes ADR-0001 for production)
+- **Status:** Parked — not implemented in v3.0.0 (see [ADR-0005](0005-stateless-single-game.md)). Valid again if persistence returns.
 - **Date:** 2026-10-11
 
 ## Context

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "scrabble-tracker"
 dynamic = ["version"]
-description = "Web app (Python + Gradio) to record, score and analyse Scrabble games."
+description = "Web app (Python + Gradio) to keep score in a Scrabble game."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -17,16 +17,11 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Intended Audience :: End Users/Desktop",
 ]
-# Runtime dependencies. Upper bounds protect against breaking major releases
+# The upper bound protects against breaking major releases
 # (Gradio 6 already changed several APIs relative to 5.x, see ADR-0002).
 dependencies = [
     "gradio>=6.0,<7.0",
-    "SQLAlchemy>=2.0,<3.0",
-    "psycopg[binary]>=3.1,<4.0",
-    "Werkzeug>=3.0,<4.0",
-    "python-dotenv>=1.0,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -55,13 +50,11 @@ src = ["src"]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "S"]
 
 [tool.ruff.lint.per-file-ignores]
-# Tests legitimately use assert and throwaway credentials.
 "tests/**" = ["S101", "S105", "S106"]
 
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
-warn_unused_ignores = false
 check_untyped_defs = true
 
 [tool.pytest.ini_options]

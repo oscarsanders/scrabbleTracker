@@ -1,7 +1,6 @@
 # ADR-0001: Persistence technology (SQLite + SQLAlchemy)
 
-- **Status:** Superseded by [ADR-0003](0003-postgresql-for-production.md)
-  for production. Still valid for local development and tests.
+- **Status:** Parked — v3.0.0 has no persistence (see [ADR-0005](0005-stateless-single-game.md)). Production design: [ADR-0003](0003-postgresql-for-production.md).
 - **Date:** 2026-09-29 (v1.0.0, Flask release)
 
 ## Context

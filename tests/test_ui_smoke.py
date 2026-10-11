@@ -1,19 +1,14 @@
-"""UI smoke test: the Blocks app builds and every handler is wired.
-
-Skipped automatically when Gradio is not installed.
-"""
+"""UI smoke test: the Blocks app builds. Skipped without Gradio."""
 
 import pytest
 
 gr = pytest.importorskip("gradio")
 
 
-def test_demo_builds(session_factory):
-    from scrabble_tracker.ui.app import RACK_SLOTS, build_demo
+def test_demo_builds():
+    from scrabble_tracker.ui.app import build_demo
 
-    demo = build_demo(session_factory)
-    assert isinstance(demo, gr.Blocks)
-    assert RACK_SLOTS == 4  # on_finish declares exactly four rack parameters
+    assert isinstance(build_demo(), gr.Blocks)
 
 
 def test_theme_builds():

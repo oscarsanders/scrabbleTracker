@@ -3,6 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-10-11
 
+> **Update (v3.0.0):** the service layer and database mentioned below were
+> removed by [ADR-0005](0005-stateless-single-game.md); the Gradio decision
+> itself still stands.
+
 ## Context
 
 v1 was a Flask application (blueprints, Jinja2 templates, Flask-Login,

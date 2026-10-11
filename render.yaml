@@ -1,39 +1,14 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
-# One-click deploy: New > Blueprint > select this repository.
+# New > Blueprint > select this repository. No secrets or database needed.
 #
-# IMPORTANT (see docs/DEPLOYMENT.md):
-#   * Free web services spin down after 15 min idle (cold start ~1 min).
-#   * The free Postgres database EXPIRES 30 days after creation and has no
-#     backups. Use a paid plan, or an external Postgres, for data you keep.
-
-databases:
-  - name: scrabble-db
-    plan: free
-    databaseName: scrabble
-    user: scrabble
+# Free web services spin down after 15 min idle (cold start ~1 min).
+# Games live only in each visitor's browser session: nothing is stored.
 
 services:
   - type: web
     name: scrabble-tracker
     runtime: python
     plan: free
-    # The Python version comes from .python-version.
     buildCommand: pip install .
     startCommand: python -m scrabble_tracker
     autoDeploy: true
-    envVars:
-      - key: SCRABBLE_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: scrabble-db
-          property: connectionString
-      - key: SCRABBLE_ADMIN_USERNAME
-        value: admin
-      # Prompted for in the Render dashboard on first deploy; never committed.
-      - key: SCRABBLE_ADMIN_PASSWORD
-        sync: false
-      - key: GRADIO_ANALYTICS_ENABLED
-        value: "False"
-      - key: GRADIO_SSR_MODE
-        value: "False"

@@ -1,23 +1,24 @@
 # Risk register
 
-Probability (P) and impact (I): L/M/H. Owner: maintainer. Review at every release.
+P = probability, I = impact (L/M/H).
 
 | ID | Risk | P | I | Mitigation / trigger |
 |---|---|---|---|---|
-| R-01 | **Free Render PostgreSQL expires 30 days after creation** (14-day grace, no backups). All data lost if ignored. | H | H | Before keeping real data: upgrade the DB plan or use an external Postgres (`docs/DEPLOYMENT.md`). Take `pg_dump` backups. |
-| R-02 | **Gradio API drift** between minor versions (v6 already changed `theme`/`css`/`api_name`). | M | M | Bounded `<7.0`; UI smoke test; review Dependabot PRs; ADR-0002. |
-| R-03 | Free web service spins down after 15 min idle (≈1 min cold start) and loses in-memory sessions and throttle state. | H | L | Documented; paid instance removes spin-down. |
-| R-04 | No dependency lock file → builds are not bit-for-bit reproducible. | M | M | Generate one with `uv pip compile` or `pip-compile` once network access to PyPI is available, commit it and install from it on Render. |
-| R-05 | `create_all` does not alter existing tables; a model change would not reach an existing production DB. | M | H | Introduce Alembic **before the first schema change**; until then, schema is frozen. |
-| R-06 | Login throttling is in-memory and per process; a second instance would not share it. | L | M | Keep one instance, or move state to the database/Redis if scaled. |
-| R-07 | **Initial verification gap:** the v2 migration was authored in an environment without Gradio, SQLAlchemy or network. Pure-logic tests (43 cases) were executed; DB- and Gradio-dependent tests and the UI were reviewed but **not executed** by the author. | M | M | Run `pytest` and a manual smoke test (below) before the first production deploy; fix findings. |
-| R-08 | Spanish tile table lacks the `RR` digraph (verify against the official Spanish set before relying on Spanish end-of-game scoring with `RR`). | M | L | Add to `tiles.py` with a test once confirmed. |
+| R-01 | **Gradio API drift** between minor versions (v6 already changed `theme`/`css`/`api_name`). | M | M | Bounded `<7.0`; UI smoke test; review Dependabot PRs; ADR-0002. |
+| R-02 | **A game is lost** on reload, tab close, redeploy, restart, or when the free Render instance sleeps after ~15 min without traffic. | H | M | By design (ADR-0005). Keep the page active during a game; persistence is the next feature (ADR-0003). |
+| R-03 | **Runtime behaviour of the UI handlers was not executed by the author** (no Gradio in the authoring environment). The domain, rendering and presentation logic (69 tests) were executed; the Gradio wiring was reviewed and its construction verified only against a stub. | M | M | Run the manual smoke test below on Render/locally and report any problem. |
+| R-04 | Anyone with the URL can use the app and consume free-tier resources. | M | L | Acceptable for a trial; add authentication (ADR-0004) before sharing widely. |
+| R-05 | Spanish tile table lacks the `RR` digraph. Verify against the official Spanish set before relying on it. | M | L | Add to `tiles.py` with a test once confirmed. |
+| R-06 | No dependency lock file; builds are not bit-for-bit reproducible. | M | L | Generate one with `uv pip compile` or `pip-compile` and install from it. |
 
-## Manual smoke test (R-07)
+## Manual smoke test (R-03)
 
-1. `pip install -e ".[dev]" && pytest` → all green.
-2. `python -m scrabble_tracker`, open the printed URL, sign in as `admin`.
-3. Admin tab: create `bob`. Log out, sign in as `bob`.
-4. New game (multiplayer, "Guest Gina"), add several moves incl. foul/pass, undo one.
-5. Finish with one empty rack: check bonus/penalty and ranking.
-6. History, Profile and *Change password* work; Admin tab is inert for `bob`.
+1. Open the app. Enter `Ana, Luis`, keep Spanish, press **Start game**.
+2. Add a word move for Ana (e.g. `CASA`, 20), a bingo for Luis (68), a foul
+   with 15 points (it must show 0), a pass. Scores update after each.
+3. Press **Undo player's last move** for Luis; his score drops.
+4. Open **Finish game**, leave Ana's box empty, type `AE` for Luis, press
+   **Close game and show ranking**. Ana gets +2, Luis −2, ranking shown.
+5. Try adding a move now: it must be refused ("already finished").
+6. **Start a new game** returns to the setup screen. Try a solo game (`Ana`).
+7. Open the app in a second browser: it must show no game (isolation).

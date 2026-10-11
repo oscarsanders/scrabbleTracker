@@ -1,6 +1,6 @@
 # ADR-0004: Gradio-native authentication with administrator-provisioned accounts
 
-- **Status:** Accepted
+- **Status:** Parked — v3.0.0 has no accounts (see [ADR-0005](0005-stateless-single-game.md)). Valid again if accounts return.
 - **Date:** 2026-10-11
 
 ## Context

@@ -1,90 +1,59 @@
-# Deployment guide — Render
+# Deployment guide — Render (stateless edition)
 
-Reference: SWEBOK v4 KA06 (operations). Facts about Render were checked against
-Render's documentation on 2026-10-11; re-verify pricing and limits before you
-rely on them.
+Facts about Render were checked against its documentation on 2026-10-11;
+re-verify limits before relying on them.
 
-## 1. What gets deployed
+The app needs **no database, no secrets and no environment variables**.
 
-| Resource | Defined in `render.yaml` | Notes |
-|---|---|---|
-| Web service `scrabble-tracker` | Python runtime, `pip install .`, `python -m scrabble_tracker` | Python version from `.python-version` (3.12). |
-| PostgreSQL `scrabble-db` | `plan: free` | **Expires 30 days after creation**, 1 GB, no backups. |
+## Option A — Blueprint (recommended)
 
-## 2. Free-tier behaviour you must know
+1. Push the repository to GitHub (files must sit in the repo **root**:
+   `pyproject.toml`, `render.yaml`, `src/`).
+2. Render → **New → Blueprint** → select the repo → **Apply**.
 
-- The web service **spins down after 15 minutes without traffic**; the next
-  request waits roughly a minute. Users must sign in again after a restart
-  (sessions are in memory).
-- The filesystem is ephemeral — which is why production requires PostgreSQL.
-- Free Postgres: see R-01. **Do not store data you care about on it**; upgrade
-  the database plan or point `DATABASE_URL` at another managed Postgres.
+## Option B — Manual Web Service
 
-## 3. First deployment
+| Field | Value |
+|---|---|
+| Runtime / Language | Python 3 |
+| Build Command | `pip install .` |
+| Start Command | `python -m scrabble_tracker` |
+| Instance type | Free |
 
-1. Push the repository to GitHub.
-2. In Render: **New → Blueprint**, pick the repository, confirm `render.yaml`.
-3. When prompted, enter `SCRABBLE_ADMIN_PASSWORD` (≥ 8 chars, not `admin1234`).
-4. Wait for the build. Open the service URL and sign in as `admin` with that
-   password. The admin account is created automatically on first start.
-5. In the **Admin** tab, create accounts for your players and give them their
-   initial passwords; they can change them in **Profile → Change password**.
+> If you leave the default Build Command, Render may pick `poetry install`
+> because `pyproject.toml` exists, and the build fails. Always set
+> `pip install .`.
 
-Every push to the tracked branch redeploys automatically (`autoDeploy: true`).
+Environment variables are optional. If you created the service for the previous
+version you can delete `SCRABBLE_ENV`, `DATABASE_URL`,
+`SCRABBLE_ADMIN_PASSWORD` and `SCRABBLE_ADMIN_USERNAME`; they are ignored.
 
-## 4. Configuration reference
+| Optional variable | Purpose |
+|---|---|
+| `PYTHON_VERSION` | e.g. `3.12.8` to pin Python. Render's default (3.14) also works with Gradio 6. |
+| `SCRABBLE_LOG_LEVEL` | `DEBUG`, `INFO` (default), `WARNING`. |
 
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `SCRABBLE_ENV` | no | `development` | `production` enables fail-fast validation. |
-| `DATABASE_URL` | prod: yes | SQLite `./data/scrabble.db` (dev) | SQLAlchemy URL; `postgres://`/`postgresql://` are normalised. |
-| `SCRABBLE_ADMIN_USERNAME` | no | `admin` | Bootstrap admin name. |
-| `SCRABBLE_ADMIN_PASSWORD` | prod: yes | dev: `admin1234` | Used **only when the admin account does not exist yet**. Rotate later in the UI. |
-| `PORT` | set by Render | `7860` | Listening port. |
-| `SCRABBLE_HOST` | no | `0.0.0.0` in prod, `127.0.0.1` otherwise | Bind address. |
-| `SCRABBLE_LOG_LEVEL` | no | `INFO` | Log verbosity. |
-| `GRADIO_ANALYTICS_ENABLED` | no | `False` in blueprint | Disables Gradio telemetry. |
-| `GRADIO_SSR_MODE` | no | `False` in blueprint | Keeps pure client-side rendering (no Node needed). |
+## Behaviour to expect
 
-Startup errors are explicit, for example *"DATABASE_URL is required in
-production"* — read the service logs first.
+- The free instance **sleeps after ~15 min without traffic**; waking takes about
+  a minute. Any game in progress is lost (R-02).
+- Reloading the page discards your game; use **Start a new game** to reset.
+- Logs (Render → Logs) show one line at startup, for example
+  `starting version='3.0.0' host='0.0.0.0' port=10000`.
 
-## 5. Operations
+## Troubleshooting
 
-**Logs:** stdout, one line per event, e.g.
-`2026-10-11T10:00:00 WARNING [scrabble_tracker.auth] login_failed username='bob'`.
-Useful events: `login_failed`, `login_blocked`, `game_created`,
-`game_finished`, `user_created`, `user_deleted`, `unhandled_ui_error`.
+| Symptom | Cause / fix |
+|---|---|
+| `The Poetry configuration is invalid` | Build Command is `poetry install`; set `pip install .`. |
+| `No open ports detected on 0.0.0.0` | Old version of the code is running (it listened on loopback). Redeploy the latest commit; this edition binds `0.0.0.0:$PORT` automatically. |
+| Build fails installing Gradio | Set `PYTHON_VERSION` to `3.12.8` and redeploy. |
+| Page loads but buttons do nothing | Open the browser console and the Render logs and report the error (R-03). |
 
-**Backups** (needed on any plan, the free one has none): with the database's
-*external* connection string from the Render dashboard,
-
-```bash
-pg_dump "$EXTERNAL_DATABASE_URL" --format=custom --file=scrabble-$(date +%F).dump
-# restore into an empty database:
-pg_restore --no-owner --dbname "$TARGET_DATABASE_URL" scrabble-YYYY-MM-DD.dump
-```
-
-**Moving off the free database:** create/upgrade the database, `pg_dump` the
-old one, `pg_restore` into the new one, update `DATABASE_URL` on the web
-service, redeploy. If you use an external provider, delete the `databases:`
-block and the `fromDatabase` reference from `render.yaml` and set
-`DATABASE_URL` manually as a secret.
-
-**Rollback:** redeploy the previous successful commit from the Render
-dashboard (or `git revert` and push). Schema is created idempotently; there are
-no destructive migrations at this time.
-
-**Locked-out admin / forgotten password:** the bootstrap password is ignored
-once the admin exists. Reset by updating `users.password_hash` in the database
-with a hash produced by `python -c "from scrabble_tracker.security import
-hash_password as h; print(h('NEW-PASSWORD'))"`.
-
-## 6. Run locally
+## Run locally
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-cp .env.example .env            # defaults are fine locally
-python -m scrabble_tracker      # http://127.0.0.1:7860, admin / admin1234
+python -m scrabble_tracker                          # http://127.0.0.1:7860
 ```
