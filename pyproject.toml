@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scrabble-tracker"
+dynamic = ["version"]
+description = "Web app (Python + Gradio) to record, score and analyse Scrabble games."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Scrabble Tracker contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: End Users/Desktop",
+]
+# Runtime dependencies. Upper bounds protect against breaking major releases
+# (Gradio 6 already changed several APIs relative to 5.x, see ADR-0002).
+dependencies = [
+    "gradio>=6.0,<7.0",
+    "SQLAlchemy>=2.0,<3.0",
+    "psycopg[binary]>=3.1,<4.0",
+    "Werkzeug>=3.0,<4.0",
+    "python-dotenv>=1.0,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+scrabble-tracker = "scrabble_tracker.main:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "scrabble_tracker.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately use assert and throwaway credentials.
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["scrabble_tracker"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = ["pragma: no cover", "if __name__ == .__main__.:"]
