@@ -1,8 +1,8 @@
 """Turns a :class:`Game` into plain display data (no Gradio imports).
 
 Keeping this step pure means what the user will see — scoreboard,
-move list, player choices and which "tiles left" boxes are visible — is
-unit-tested without a browser.
+move list, player choices and which boxes are visible — is unit-tested
+without a browser.
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ class PlayPanel:
     roster: tuple[tuple[str, int], ...]  # (player name, player index)
     selected: int | None
     rack_labels: tuple[str | None, ...]  # None = hide that box
+    show_form: bool  # False once the game is finished
 
 
 def build_panel(game: Game, selected: int | None = None) -> PlayPanel:
@@ -46,4 +47,5 @@ def build_panel(game: Game, selected: int | None = None) -> PlayPanel:
         roster=roster,
         selected=current,
         rack_labels=tuple(labels),
+        show_form=not game.finished,
     )

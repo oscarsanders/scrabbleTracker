@@ -5,6 +5,23 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-11
+
+### Added
+- Final ranking numbered 1–N with a **Winner** badge (ties share it).
+- Average points per move for each player, next to the game average.
+
+### Changed
+- Wording: "scrabble" instead of "bingo" everywhere (scoreboard shows
+  "0 scrabbles · 0 moves", with correct plurals).
+- Wider layout (980 px): move form and move list side by side on wide screens
+  (stacked on phones), players in a responsive grid, fields grouped in rows,
+  move list with bounded height. The move form is hidden once the game ends.
+
+### Fixed
+- Text inside the cream cards (player names, table headers and rows) turned
+  white and unreadable in dark mode.
+
 ## [3.0.0] - 2026-10-11
 
 Stateless edition for a first trial on Render (ADR-0005).

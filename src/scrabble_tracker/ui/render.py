@@ -21,6 +21,11 @@ def esc(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+def plural(count: int, noun: str) -> str:
+    """``1 move`` / ``2 moves`` (regular English plurals only)."""
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
 def message_html(kind: str, text: str) -> str:
     """A feedback banner; an empty ``text`` clears it."""
     if not text:
@@ -40,49 +45,86 @@ def header_html() -> str:
 
 def _meta(game: Game) -> str:
     language = LANGUAGE_LABELS.get(game.language, game.language)
-    return f"Tiles: {esc(language)} · Average: {esc(game.average_score())}"
+    return (
+        f"Tiles: {esc(language)} · "
+        f"Game average: {esc(game.average_score())} per player"
+    )
+
+
+def _player_card(
+    game: Game,
+    index: int,
+    score: int,
+    *,
+    prefix: str = "",
+    badge: str = "",
+    note: str = "",
+    highlight: bool = False,
+) -> str:
+    """One player tile shared by the live board and the final ranking."""
+    stats = (
+        f"{plural(game.scrabble_count(index), 'scrabble')} · "
+        f"{plural(game.move_count(index), 'move')} · "
+        f"avg {esc(game.average_per_move(index))} per move"
+    )
+    css = " st-leader" if highlight else ""
+    return (
+        f'<div class="st-player{css}"><div>'
+        f"<strong>{prefix}{esc(game.players[index].name)}</strong>{badge}"
+        f'<div class="st-muted">{stats}</div>{note}</div>'
+        f'<span class="st-score">{esc(score)}</span></div>'
+    )
 
 
 def scoreboard_html(game: Game) -> str:
     """Live scoreboard of a game in progress."""
-    rows = []
-    for position, (index, score) in enumerate(game.ranking()):
-        leader = " st-leader" if position == 0 and len(game.players) > 1 else ""
-        rows.append(
-            f'<div class="st-player{leader}"><div>'
-            f"<strong>{esc(game.players[index].name)}</strong>"
-            f'<div class="st-muted">{esc(game.scrabble_count(index))} bingo(s) · '
-            f"{esc(game.move_count(index))} moves</div></div>"
-            f'<span class="st-score">{esc(score)}</span></div>'
+    cards = "".join(
+        _player_card(
+            game, index, score, highlight=position == 1 and len(game.players) > 1
         )
+        for position, index, score in game.standings()
+    )
     return (
         '<div class="st-card"><h3>Game in progress</h3>'
-        f'<p class="st-muted">{_meta(game)}</p>' + "".join(rows) + "</div>"
+        f'<p class="st-muted">{_meta(game)}</p>'
+        f'<div class="st-players">{cards}</div></div>'
     )
 
 
 def ranking_html(game: Game) -> str:
-    """Final standings of a finished game."""
-    rows = []
-    for position, (index, score) in enumerate(game.ranking(), start=1):
+    """Final standings with a Winner badge (ties share it)."""
+    winners = set(game.winners())
+    label = "Winner (tie)" if len(winners) > 1 else "Winner"
+    cards = []
+    for position, index, score in game.standings():
         player = game.players[index]
         notes = []
         if player.penalty:
             notes.append(f"−{esc(player.penalty)} remaining tiles")
         if player.bonus:
             notes.append(f"+{esc(player.bonus)} went out first")
-        detail = " · ".join(notes) or "no adjustments"
-        leader = " st-leader" if position == 1 else ""
-        rows.append(
-            f'<div class="st-player{leader}"><div>'
-            f"<strong>{position}. {esc(player.name)}</strong>"
-            f'<div class="st-muted">{detail} · '
-            f"{esc(game.scrabble_count(index))} bingo(s)</div></div>"
-            f'<span class="st-score">{esc(score)}</span></div>'
+        is_winner = index in winners
+        cards.append(
+            _player_card(
+                game,
+                index,
+                score,
+                prefix=f"{position}. ",
+                badge=(
+                    f' <span class="st-badge st-badge-winner">🏆 {label}</span>'
+                    if is_winner
+                    else ""
+                ),
+                note=(
+                    f'<div class="st-muted">{" · ".join(notes)}</div>' if notes else ""
+                ),
+                highlight=is_winner,
+            )
         )
     return (
         '<div class="st-card"><h3>Final ranking</h3>'
-        f'<p class="st-muted">{_meta(game)}</p>' + "".join(rows) + "</div>"
+        f'<p class="st-muted">{_meta(game)}</p>'
+        f'<div class="st-players">{"".join(cards)}</div></div>'
     )
 
 
@@ -101,6 +143,6 @@ def turn_log_html(game: Game) -> str:
     )
     return (
         '<div class="st-card"><h3>Moves</h3><div class="st-table-wrap"><table>'
-        "<tr><th>Player</th><th>Type</th><th>Word</th><th>Points</th></tr>"
+        "<tr><th>Player</th><th>Type</th><th>Word</th><th>Pts</th></tr>"
         f"{body}</table></div></div>"
     )

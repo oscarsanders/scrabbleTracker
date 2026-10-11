@@ -184,3 +184,40 @@ def test_each_game_is_independent():
     a, b = Game("es", ["Ana"]), Game("es", ["Ana"])
     a.add_turn(0, "normal", "A", 10)
     assert b.running_score(0) == 0
+
+
+def test_average_per_move_counts_zero_point_moves():
+    g = _duo()
+    assert g.average_per_move(0) == 0.0
+    g.add_turn(0, "normal", "CASA", 20)
+    g.add_turn(0, "foul", "XYZ", 0)
+    g.add_turn(0, "normal", "SOL", 7)
+    assert g.average_per_move(0) == 9.0  # 27 points / 3 moves
+    assert g.average_per_move(1) == 0.0
+
+
+def test_standings_use_competition_ranking_for_ties():
+    g = Game("es", ["Ana", "Luis", "Eva"])
+    g.add_turn(0, "normal", "A", 10)
+    g.add_turn(1, "normal", "B", 10)
+    g.add_turn(2, "normal", "C", 3)
+    assert g.standings() == [(1, 0, 10), (1, 1, 10), (3, 2, 3)]
+
+
+def test_winners_only_for_finished_multiplayer_games():
+    g = _duo()
+    g.add_turn(0, "normal", "A", 10)
+    assert g.winners() == []  # still in progress
+    g.finish(["", ""])
+    assert g.winners() == [0]
+    solo = Game("es", ["Ana"])
+    solo.finish([""])
+    assert solo.winners() == []
+
+
+def test_winners_include_ties():
+    g = _duo()
+    g.add_turn(0, "normal", "A", 10)
+    g.add_turn(1, "normal", "B", 10)
+    g.finish(["", ""])
+    assert g.winners() == [0, 1]

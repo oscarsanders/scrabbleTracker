@@ -11,10 +11,10 @@ with the board's colour palette. Nothing is stored: no database, no accounts.
 ## What it does
 
 - Start a game with 1–4 players (one name = solo) in Spanish or English tiles.
-- Record moves: word, bingo, foul, pass, exchange; undo a player's last move.
-- Live scoreboard and game average.
+- Record moves: word, scrabble (all 7 tiles), foul, pass, exchange; undo a player's last move.
+- Live scoreboard with the game average and each player's average points per move.
 - Finish the game: enter remaining tiles, penalties and the first-out bonus are
-  applied, and the final ranking is shown.
+  applied, and the final ranking (1–N, with a **Winner** badge) is shown.
 
 > ⚠️ **The game lives only in your browser session.** Reloading the page,
 > a server restart, or the free Render instance sleeping (~15 min idle)

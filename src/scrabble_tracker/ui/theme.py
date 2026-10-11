@@ -1,8 +1,12 @@
-"""Visual identity: Scrabble board green and tile cream (RNF-01).
+"""Visual identity: Scrabble board green and tile cream.
 
 The CSS targets the custom ``st-*`` classes emitted by ``render.py`` plus
-a few Gradio containers. It is passed to ``launch(css=...)``: Gradio 6
-moved ``theme``/``css`` from ``gr.Blocks`` to ``launch`` (ADR-0002).
+the Gradio container. It is passed to ``launch(css=...)``: Gradio 6 moved
+``theme``/``css`` from ``gr.Blocks`` to ``launch`` (ADR-0002).
+
+Dark mode: Gradio recolours text inside ``gr.HTML`` for dark themes, which
+made dark-on-cream text turn white. Text colours inside the cream cards are
+therefore set with ``!important`` so the cards read the same in both modes.
 """
 
 from __future__ import annotations
@@ -12,57 +16,70 @@ CSS = """
   --st-board: #0b6e4f;
   --st-board-dark: #084f39;
   --st-tile: #f2e2ba;
-  --st-tile-dark: #e3cd94;
+  --st-tile-dark: #d9c48a;
   --st-wood: #7a4a2b;
   --st-ink: #262220;
-  --st-muted: #6b6459;
-  --st-ok: #2f8f56;
-  --st-error: #c0392b;
+  --st-muted: #5f574b;
+  --st-gold: #e0a800;
 }
-.gradio-container { max-width: 760px !important; margin: 0 auto !important; }
+.gradio-container { max-width: 980px !important; margin: 0 auto !important; }
 
+/* Header */
 .st-header { display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: .5rem; background: var(--st-board-dark);
-  padding: .6rem 1rem; border-radius: 10px; }
+  padding: .45rem .9rem; border-radius: 10px; }
 .st-brand { display: flex; gap: 4px; }
-.st-tile { background: var(--st-tile); color: var(--st-wood); font-weight: 700;
-  width: 26px; height: 26px; display: flex; align-items: center;
-  justify-content: center; border-radius: 4px;
-  box-shadow: 0 2px 0 var(--st-tile-dark); font-size: .9rem; }
-.st-user { color: var(--st-tile); font-size: .92rem; }
+.st-tile { background: var(--st-tile); color: var(--st-wood) !important;
+  font-weight: 700; width: 24px; height: 24px; display: flex;
+  align-items: center; justify-content: center; border-radius: 4px;
+  box-shadow: 0 2px 0 var(--st-tile-dark); font-size: .85rem; }
+.st-user { color: var(--st-tile) !important; font-size: .9rem; }
 
-.st-card { background: var(--st-tile); color: var(--st-ink); border-radius: 10px;
-  padding: 1rem; margin: .5rem 0; box-shadow: 0 3px 0 var(--st-tile-dark); }
-.st-card h3 { margin: 0 0 .25rem 0; color: var(--st-board-dark); }
-.st-muted { color: var(--st-muted); font-size: .88rem; }
+/* Cream cards: force dark text in light AND dark mode */
+.st-card { background: var(--st-tile); border-radius: 10px;
+  padding: .7rem .9rem; margin: .35rem 0; box-shadow: 0 3px 0 var(--st-tile-dark); }
+.st-card, .st-card p, .st-card div, .st-card strong, .st-card td, .st-card th,
+.st-card span { color: var(--st-ink) !important; }
+.st-card h3 { margin: 0 0 .15rem 0; font-size: 1.05rem;
+  color: var(--st-board-dark) !important; }
+.st-card .st-muted { color: var(--st-muted) !important; font-size: .85rem;
+  margin: 0; }
+.st-card .st-score { color: var(--st-board-dark) !important; }
 
+/* Players: responsive grid keeps the board short on wide screens */
+.st-players { display: grid; gap: .45rem; margin-top: .4rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .st-player { display: flex; justify-content: space-between; align-items: center;
-  background: #fff8e6; border-radius: 8px; padding: .55rem .8rem; margin: .4rem 0;
+  gap: .5rem; background: #fff8e6; border-radius: 8px; padding: .45rem .7rem;
   border-left: 5px solid var(--st-tile-dark); }
 .st-player.st-leader { border-left-color: var(--st-board); }
-.st-score { font-size: 1.6rem; font-weight: 700; color: var(--st-board-dark); }
+.st-score { font-size: 1.55rem; font-weight: 700; }
 
-.st-table-wrap { overflow-x: auto; }
-.st-card table { width: 100%; border-collapse: collapse; color: var(--st-ink); }
-.st-card th, .st-card td { text-align: left; padding: .4rem .5rem;
-  border-bottom: 1px solid var(--st-tile-dark); font-size: .92rem; }
+/* Moves table: bounded height, scrolls inside the card */
+.st-table-wrap { overflow: auto; max-height: 300px; }
+.st-card table { width: 100%; border-collapse: collapse; background: transparent; }
+.st-card th, .st-card td { text-align: left; padding: .3rem .45rem;
+  font-size: .88rem; background: transparent !important;
+  border: 0 !important; border-bottom: 1px solid var(--st-tile-dark) !important; }
+.st-card th { position: sticky; top: 0; background: var(--st-tile) !important;
+  color: var(--st-board-dark) !important; }
 
-.st-badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px;
-  font-size: .78rem; background: var(--st-tile-dark); color: var(--st-ink); }
-.st-badge-scrabble { background: #3f6fae; color: #fff; }
-.st-badge-foul { background: var(--st-error); color: #fff; }
-.st-badge-admin { background: var(--st-tile); color: var(--st-wood); }
+/* Badges */
+.st-card .st-badge, .st-badge { display: inline-block; padding: .05rem .5rem;
+  border-radius: 999px; font-size: .75rem; background: var(--st-tile-dark);
+  color: var(--st-ink) !important; }
+.st-card .st-badge-scrabble { background: #3f6fae; color: #fff !important; }
+.st-card .st-badge-foul { background: #c0392b; color: #fff !important; }
+.st-card .st-badge-winner { background: var(--st-gold); color: #3a2a00 !important;
+  font-weight: 700; margin-left: .35rem; }
 
-.st-stats { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .5rem; }
-.st-stat { flex: 1 1 110px; background: #fff8e6; border-radius: 8px;
-  padding: .6rem; display: flex; flex-direction: column; align-items: center; }
-.st-stat-value { font-size: 1.5rem; font-weight: 700; color: var(--st-board-dark); }
-
-.st-msg { padding: .6rem .8rem; border-radius: 8px; font-size: .92rem;
-  margin: .3rem 0; }
-.st-msg-ok { background: #e3f4ea; color: #1d5c37; }
-.st-msg-error { background: #fbe4e1; color: #8a2a1f; }
-.st-msg-info { background: #e8eef8; color: #2c4a78; }
+/* Feedback banners */
+.st-msg { padding: .45rem .8rem; border-radius: 8px; font-size: .9rem;
+  margin: .2rem 0; }
+.st-msg, .st-msg * { color: inherit; }
+.st-msg-ok { background: #e3f4ea; color: #1d5c37 !important; }
+.st-msg-error { background: #fbe4e1; color: #8a2a1f !important; }
+.st-msg-info { background: #e8eef8; color: #2c4a78 !important; }
 """
 
 

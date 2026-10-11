@@ -14,11 +14,13 @@ P = probability, I = impact (L/M/H).
 ## Manual smoke test (R-03)
 
 1. Open the app. Enter `Ana, Luis`, keep Spanish, press **Start game**.
-2. Add a word move for Ana (e.g. `CASA`, 20), a bingo for Luis (68), a foul
+2. Add a word move for Ana (e.g. `CASA`, 20), a scrabble for Luis (68), a foul
    with 15 points (it must show 0), a pass. Scores update after each.
 3. Press **Undo player's last move** for Luis; his score drops.
 4. Open **Finish game**, leave Ana's box empty, type `AE` for Luis, press
-   **Close game and show ranking**. Ana gets +2, Luis −2, ranking shown.
+   **Close game and show ranking**. Ana gets +2, Luis −2, ranking shown 1–2 with a Winner badge, and the move form disappears.
 5. Try adding a move now: it must be refused ("already finished").
 6. **Start a new game** returns to the setup screen. Try a solo game (`Ana`).
 7. Open the app in a second browser: it must show no game (isolation).
+8. Switch the browser/OS to dark mode: names, table text and headers inside the cream cards stay dark and readable.
+9. On a phone-width window the form and the move list stack; on a wide window they sit side by side.

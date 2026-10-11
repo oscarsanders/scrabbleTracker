@@ -146,6 +146,11 @@ class Game:
     def move_count(self, player: int) -> int:
         return sum(1 for t in self.turns if t.player == player)
 
+    def average_per_move(self, player: int) -> float:
+        """Average points per recorded move (zero-point moves included)."""
+        moves = self.move_count(player)
+        return round(self.running_score(player) / moves, 1) if moves else 0.0
+
     def average_score(self) -> float:
         """Average running score of all players."""
         total = sum(self.running_score(i) for i in range(len(self.players)))
@@ -155,6 +160,24 @@ class Game:
         """``(player_index, score)`` pairs, best first; ties keep turn order."""
         scored = [(i, self.score(i)) for i in range(len(self.players))]
         return sorted(scored, key=lambda pair: pair[1], reverse=True)
+
+    def standings(self) -> list[tuple[int, int, int]]:
+        """``(position, player_index, score)``, best first.
+
+        Equal scores share a position (1, 1, 3), the usual competition
+        ranking.
+        """
+        ranking = self.ranking()
+        return [
+            (1 + sum(1 for _, other in ranking if other > score), index, score)
+            for index, score in ranking
+        ]
+
+    def winners(self) -> list[int]:
+        """Indexes of the top scorers of a finished multiplayer game."""
+        if not self.finished or len(self.players) < 2:
+            return []
+        return [index for position, index, _ in self.standings() if position == 1]
 
     # -- closing --------------------------------------------------------
     def finish(self, remaining: Sequence[str]) -> None:

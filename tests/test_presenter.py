@@ -30,6 +30,7 @@ def test_finished_game_shows_ranking_and_hides_racks():
     panel = build_panel(game)
     assert "Final ranking" in panel.board_html
     assert panel.rack_labels == (None,) * 4
+    assert panel.show_form is False
 
 
 def test_in_progress_shows_scoreboard():
@@ -38,3 +39,7 @@ def test_in_progress_shows_scoreboard():
     panel = build_panel(game)
     assert "Game in progress" in panel.board_html and "12" in panel.board_html
     assert "CASA" in panel.log_html
+
+
+def test_form_is_visible_while_game_is_open():
+    assert build_panel(Game("es", ["Ana"])).show_form is True

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 TURN_TYPE_LABELS: dict[str, str] = {
     "normal": "Word",
-    "scrabble": "Bingo (Scrabble)",
+    "scrabble": "Scrabble (all 7 tiles)",
     "foul": "Foul (invalid word)",
     "pass": "Pass",
     "exchange": "Exchange tiles",

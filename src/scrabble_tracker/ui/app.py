@@ -46,58 +46,83 @@ def build_demo() -> gr.Blocks:
         # -- Setup screen ------------------------------------------------
         with gr.Column(visible=True) as setup_col:
             gr.Markdown("### New game")
-            players_box = gr.Textbox(
-                label="Players (comma-separated, 1 to 4)",
-                placeholder="Ana, Luis",
-                info="One name means a solo game.",
-            )
-            language = gr.Radio(
-                label="Tile language",
-                choices=[(label, code) for code, label in LANGUAGE_LABELS.items()],
-                value="es",
-            )
+            with gr.Row():
+                players_box = gr.Textbox(
+                    label="Players (comma-separated, 1 to 4)",
+                    placeholder="Ana, Luis",
+                    info="One name means a solo game.",
+                    scale=3,
+                    min_width=260,
+                )
+                language = gr.Radio(
+                    label="Tile language",
+                    choices=[(label, code) for code, label in LANGUAGE_LABELS.items()],
+                    value="es",
+                    scale=1,
+                    min_width=200,
+                )
             start_btn = gr.Button("Start game", variant="primary")
             setup_msg = gr.HTML("")
 
         # -- Play screen -------------------------------------------------
+        # Wide screens: move form on the left, move list on the right.
+        # Narrow screens (phones): the two columns stack automatically.
         with gr.Column(visible=False) as play_col:
             board = gr.HTML("")
-            gr.Markdown("### Record a move")
-            player_dd = gr.Dropdown(label="Player", choices=[], value=None)
-            type_dd = gr.Dropdown(
-                label="Move type",
-                choices=[(label, code) for code, label in TURN_TYPE_LABELS.items()],
-                value="normal",
-            )
-            word_box = gr.Textbox(label="Word", placeholder="e.g. QUIJOTE")
-            points_num = gr.Number(
-                label="Points (ignored for foul, pass and exchange)",
-                value=0,
-                precision=0,
-                minimum=0,
-            )
-            with gr.Row():
-                add_btn = gr.Button("Add move", variant="primary")
-                undo_btn = gr.Button("Undo player's last move")
             play_msg = gr.HTML("")
-            log = gr.HTML("")
-            with gr.Accordion("Finish game", open=False):
-                gr.Markdown(
-                    "Enter the tiles each player still holds. Leave a field "
-                    "**empty** for the player who used all their tiles: they "
-                    "gain the value of everyone else's tiles."
-                )
-                rack_boxes = [
-                    gr.Textbox(label=f"Player {slot + 1}", visible=False)
-                    for slot in range(RACK_SLOTS)
-                ]
-                finish_btn = gr.Button("Close game and show ranking", variant="stop")
-            new_btn = gr.Button("Start a new game")
+            with gr.Row():
+                with gr.Column(scale=1, min_width=320, visible=True) as form_col:
+                    gr.Markdown("### Record a move")
+                    with gr.Row():
+                        player_dd = gr.Dropdown(
+                            label="Player", choices=[], value=None, min_width=140
+                        )
+                        type_dd = gr.Dropdown(
+                            label="Move type",
+                            choices=[
+                                (label, code)
+                                for code, label in TURN_TYPE_LABELS.items()
+                            ],
+                            value="normal",
+                            min_width=140,
+                        )
+                    with gr.Row():
+                        word_box = gr.Textbox(
+                            label="Word", placeholder="e.g. QUIJOTE", min_width=140
+                        )
+                        points_num = gr.Number(
+                            label="Points",
+                            info="Ignored for foul, pass, exchange",
+                            value=0,
+                            precision=0,
+                            minimum=0,
+                            min_width=140,
+                        )
+                    with gr.Row():
+                        add_btn = gr.Button("Add move", variant="primary")
+                        undo_btn = gr.Button("Undo player's last move")
+                    with gr.Accordion("Finish game", open=False):
+                        gr.Markdown(
+                            "Enter the tiles each player still holds. Leave a field "
+                            "**empty** for the player who used all their tiles: they "
+                            "gain the value of everyone else's tiles."
+                        )
+                        rack_boxes = [
+                            gr.Textbox(label=f"Player {slot + 1}", visible=False)
+                            for slot in range(RACK_SLOTS)
+                        ]
+                        finish_btn = gr.Button(
+                            "Close game and show ranking", variant="stop"
+                        )
+                with gr.Column(scale=1, min_width=320):
+                    log = gr.HTML("")
+            new_btn = gr.Button("Start a new game", size="sm")
 
         all_outputs = [
             game_state,
             setup_col,
             play_col,
+            form_col,
             setup_msg,
             board,
             log,
@@ -121,6 +146,7 @@ def build_demo() -> gr.Blocks:
                     choices=list(panel.roster), value=panel.selected
                 ),
                 play_msg: message,
+                form_col: gr.Column(visible=panel.show_form),
             }
             for slot, box in enumerate(rack_boxes):
                 label = panel.rack_labels[slot]
